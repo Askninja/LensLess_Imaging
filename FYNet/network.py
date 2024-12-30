@@ -1,5 +1,8 @@
 # Generator and Discriminator networks
 # as well as loss funtions used
+import os
+import glob
+
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -61,7 +64,7 @@ class SpectralConv2d_fast(nn.Module):
 
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.modes = modes #Number of Fourier modes to multiply, at most floor(N/2) + 1
+        self.modes = modes #Number of modes to multiply
 
         self.scale = (1 / (in_channels * out_channels))
         self.weights1 = nn.Parameter(self.scale * torch.rand(1, out_channels, self.modes, self.modes, dtype=torch.cfloat))
@@ -74,7 +77,6 @@ class SpectralConv2d_fast(nn.Module):
 
     def forward(self, x):
         batchsize = x.shape[0]
-        #Compute Fourier coeffcients up to factor of e^(- something constant)
         x_ft = torch.fft.rfft2(x)
 
         # Multiply relevant Fourier modes
@@ -83,9 +85,6 @@ class SpectralConv2d_fast(nn.Module):
             self.compl_mul2d(x_ft[:, :, :self.modes, :self.modes], self.weights1)
         out_ft[:, :, -self.modes:, :self.modes] = \
             self.compl_mul2d(x_ft[:, :, -self.modes:, :self.modes], self.weights2)
-
-        # out_ft = self.ca(out_ft.abs()) * out_ft
-        # out_ft = self.sa(out_ft.abs()) * out_ft
 
         #Return to physical space
         x = torch.fft.irfft2(out_ft, s=(x.size(-2), x.size(-1)))
