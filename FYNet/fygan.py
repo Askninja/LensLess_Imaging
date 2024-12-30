@@ -36,6 +36,11 @@ train_loss_hist = []
 val_loss_hist = []
 d_loss_hist = []
 
+# Define transformations
+transform = transforms.Compose([
+    transforms.ToTensor()
+])
+
 def normalize(x):
     max_value = x.max()
     min_value = x.min()
